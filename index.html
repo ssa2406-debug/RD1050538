@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- iOS 숫자/전화번호 자동 링크 방지 -->
+  <meta name="format-detection" content="telephone=no">
+
+  <title>RD 1050538</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #ffffff;
+      color: #111;
+    }
+
+    /* iOS 자동 링크 스타일 제거 */
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    h1, h1 * {
+      text-decoration: none !important;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 26px 18px 30px;
+    }
+
+    h1 {
+      margin: 22px 0 26px;
+      text-align: center;
+      font-size: 44px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .sub {
+      text-align: center;
+      color: #555;
+      line-height: 1.35;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 50px;
+    }
+
+    /* 2x2 이미지 그리드 */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .thumb {
+      border: 2px solid #bcbcbc;
+      background: #ffffff;
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #f5f5f5;
+    }
+
+    /* 확대 뷰 */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display: none;
+      z-index: 9999;
+      padding: 18px;
+      box-sizing: border-box;
+    }
+
+    .overlay.show {
+      display: block;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      color: #111;
+      font-size: 16px;
+    }
+
+    .btn {
+      border: 1px solid #ccc;
+      background: #ffffff;
+      color: #111;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .viewer {
+      height: calc(100vh - 80px);
+      display: grid;
+      place-items: center;
+    }
+
+    .viewer img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 10px;
+      background: #ffffff;
+    }
+
+    @media (max-width: 420px) {
+      h1 { font-size: 38px; }
+      .sub { font-size: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>RD 1050538</h1>
+
+    <div class="sub">
+      Woven - Plain Weave<br>
+      Nylon 96% Span 4%<br>
+      240(g/m²) / 7.08(oz)<br>
+      Piece Dye
+    </div>
+
+    <div class="grid">
+      <div class="thumb" data-src="1.png"><img src="1.png" alt=""></div>
+      <div class="thumb" data-src="2.png"><img src="2.png" alt=""></div>
+      <div class="thumb" data-src="3.gif"><img src="3.gif" alt=""></div>
+      <div class="thumb" data-src="4.png"><img src="4.png" alt=""></div>
+    </div>
+  </div>
+
+  <!-- 확대 화면 -->
+  <div class="overlay" id="overlay">
+    <div class="topbar">
+      <button class="btn" id="backBtn">← Back</button>
+      <div id="counter"></div>
+      <button class="btn" id="closeBtn">Close ✕</button>
+    </div>
+    <div class="viewer">
+      <img id="bigImg" alt="">
+    </div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById("overlay");
+    const bigImg = document.getElementById("bigImg");
+    const backBtn = document.getElementById("backBtn");
+    const closeBtn = document.getElementById("closeBtn");
+    const items = Array.from(document.querySelectorAll(".thumb"));
+    const srcList = items.map(el => el.dataset.src);
+
+    let currentIndex = 0;
+    let startX = 0;
+
+    function openViewer(src) {
+      currentIndex = srcList.indexOf(src);
+      showImage();
+      overlay.classList.add("show");
+      history.pushState({ open: true }, "");
+    }
+
+    function showImage() {
+      bigImg.src = srcList[currentIndex];
+      document.getElementById("counter").textContent =
+        (currentIndex + 1) + " / " + srcList.length;
+    }
+
+    function closeViewer() {
+      overlay.classList.remove("show");
+      bigImg.src = "";
+    }
+
+    function nextImage() {
+      if (currentIndex < srcList.length - 1) {
+        currentIndex++;
+        showImage();
+      }
+    }
+
+    function prevImage() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        showImage();
+      }
+    }
+
+    // 썸네일 클릭
+    items.forEach(el => {
+      el.addEventListener("click", () => openViewer(el.dataset.src));
+    });
+
+    // 버튼
+    backBtn.addEventListener("click", () => history.back());
+    closeBtn.addEventListener("click", () => history.back());
+
+    // 뒤로가기
+    window.addEventListener("popstate", () => {
+      if (overlay.classList.contains("show")) closeViewer();
+    });
+
+    // 스와이프
+    overlay.addEventListener("touchstart", e => {
+      startX = e.touches[0].clientX;
+    });
+
+    overlay.addEventListener("touchend", e => {
+      const endX = e.changedTouches[0].clientX;
+      const diff = startX - endX;
+
+      if (Math.abs(diff) < 40) return;
+
+      if (diff > 0) {
+        nextImage();
+      } else {
+        prevImage();
+      }
+    });
+
+    // 배경 클릭 시 닫기
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) history.back();
+    });
+  </script>
+</body>
+</html>
