@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="format-detection" content="telephone=no">
+
+  <title>RD 1050538</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #ffffff;
+      color: #111;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    h1, h1 * { text-decoration: none !important; }
+
+    /* ✅ 오버레이 열린 동안 바디 스크롤/제스처 잠금 */
+    body.lock {
+      overflow: hidden;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    .wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 26px 18px 30px;
+    }
+
+    h1 {
+      margin: 22px 0 26px;
+      text-align: center;
+      font-size: 44px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .sub {
+      text-align: center;
+      color: #555;
+      line-height: 1.35;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 50px;
+    }
+
+    /* Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .thumb {
+      border: 2px solid #bcbcbc;
+      aspect-ratio: 1 / 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #f5f5f5;
+      display: block;
+    }
+
+    /* Overlay */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      display: none;
+      z-index: 9999;
+      padding: 18px;
+      box-sizing: border-box;
+
+      /* ✅ 브라우저 기본 바운스/스크롤 전달 방지 */
+      overscroll-behavior: contain;
+      touch-action: none;
+    }
+
+    .overlay.show { display: block; }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      font-size: 16px;
+    }
+
+    .btn {
+      border: 1px solid #ccc;
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .viewer {
+      height: calc(100vh - 80px);
+      display: grid;
+      place-items: center;
+    }
+
+    .viewer img,
+    .viewer video {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    video { outline: none; }
+
+    @media (max-width: 420px) {
+      h1 { font-size: 38px; }
+      .sub { font-size: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>RD 1050538</h1>
+
+    <div class="sub">
+      Woven - Plain Weave<br>
+      Nylon 96% Span 4%<br>
+      240(g/m²) / 7.08(oz)<br>
+      Piece Dye
+    </div>
+
+    <!-- 미리보기 / 확대 매핑 -->
+    <div class="grid">
+      <div class="thumb" data-type="image" data-src="5.png"><img src="1.png" alt=""></div>
+      <div class="thumb" data-type="image" data-src="6.png"><img src="2.png" alt=""></div>
+      <div class="thumb" data-type="video" data-src="7.mp4"><img src="3.png" alt=""></div>
+      <div class="thumb" data-type="image" data-src="8.png"><img src="4.png" alt=""></div>
+    </div>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay">
+    <div class="topbar">
+      <button class="btn" id="backBtn">← Back</button>
+      <div id="counter"></div>
+      <button class="btn" id="closeBtn">Close ✕</button>
+    </div>
+    <div class="viewer" id="viewer"></div>
+  </div>
+
+  <script>
+    const overlay = document.getElementById("overlay");
+    const viewer = document.getElementById("viewer");
+    const backBtn = document.getElementById("backBtn");
+    const closeBtn = document.getElementById("closeBtn");
+    const thumbs = Array.from(document.querySelectorAll(".thumb"));
+
+    let currentIndex = 0;
+
+    // ✅ 스와이프 오동작 방지용(가로/세로 구분)
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    function showMedia(index) {
+      viewer.innerHTML = "";
+      const el = thumbs[index];
+      const type = el.dataset.type;
+      const src = el.dataset.src;
+
+      if (type === "video") {
+        const video = document.createElement("video");
+        video.src = src;
+        video.autoplay = true;
+        video.loop = true;
+        video.muted = true;
+        video.playsInline = true;
+        video.setAttribute("webkit-playsinline", "");
+        video.preload = "metadata";
+        viewer.appendChild(video);
+
+        // autoplay 안전 시도
+        const p = video.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } else {
+        const img = document.createElement("img");
+        img.src = src;
+        viewer.appendChild(img);
+      }
+
+      document.getElementById("counter").textContent =
+        `${index + 1} / ${thumbs.length}`;
+    }
+
+    function openViewer(index) {
+      currentIndex = index;
+      showMedia(currentIndex);
+      overlay.classList.add("show");
+
+      // ✅ 바디 스크롤 잠금
+      document.body.classList.add("lock");
+
+      history.pushState({ open: true }, "");
+    }
+
+    function closeViewer() {
+      overlay.classList.remove("show");
+      viewer.innerHTML = "";
+
+      // ✅ 바디 스크롤 잠금 해제
+      document.body.classList.remove("lock");
+    }
+
+    function next() {
+      if (currentIndex < thumbs.length - 1) {
+        currentIndex++;
+        showMedia(currentIndex);
+      }
+    }
+
+    function prev() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        showMedia(currentIndex);
+      }
+    }
+
+    thumbs.forEach((el, i) => {
+      el.addEventListener("click", () => openViewer(i));
+    });
+
+    backBtn.addEventListener("click", () => history.back());
+    closeBtn.addEventListener("click", () => history.back());
+
+    window.addEventListener("popstate", () => {
+      if (overlay.classList.contains("show")) closeViewer();
+    });
+
+    // ✅ 오버레이에서 페이지 스크롤/바운스/뒤로가기 제스처 느낌 차단
+    overlay.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+    overlay.addEventListener("touchstart", (e) => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    }, { passive: true });
+
+    overlay.addEventListener("touchend", (e) => {
+      if (!tracking) return;
+      tracking = false;
+
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+
+      // ✅ 세로로 많이 움직였으면(스크롤 제스처) 넘김 금지
+      if (Math.abs(dy) > Math.abs(dx)) return;
+
+      // ✅ 너무 짧은 움직임은 무시
+      if (Math.abs(dx) < 60) return;
+
+      // 왼쪽 스와이프: 다음 / 오른쪽 스와이프: 이전
+      if (dx < 0) next();
+      else prev();
+    }, { passive: true });
+
+    // 배경 클릭 시 닫기
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) history.back();
+    });
+  </script>
+</body>
+</html>
